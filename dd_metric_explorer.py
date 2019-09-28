@@ -2,17 +2,30 @@
 import sys
 from custom_metric_data import custom_metric_usage
 from datadog_account_object import datadog_account
+from metric_analysis_and_export import analyze_metrics
 
 def main(run_time_parameters):
-	custom_metric_object = custom_metric_usage(run_time_parameters)
 	dd_account_object = datadog_account(run_time_parameters)
+	# If file_path is not USE_API, then load the csv file
+	if run_time_parameters['file_path']['value'] != 'USE_API':
+		custom_metric_object = custom_metric_usage(run_time_parameters)
+		custom_metric_pd = custom_metric_object.custom_metric_pd
+	# If file_path is USE_API then use the api to get metric usage
+	else:
+		custom_metric_pd = dd_account_object.get_custom_metrics_usage()
+		custom_metric_list = custom_metric_pd['metric_name'].tolist()
+
+	analyze_metrics(custom_metric_pd, dd_account_object)
+
+	
+	
 
 # Function to get input paramters from command line
 def get_run_time_parameters():
 	# Default run_time_parameters to use if no user inputs
 	run_time_parameters = {'api_key':{'value':None,'discription':'Api key for Datadog Org you whish to explore metrics for. Here is infor on DD api keys: https://docs.datadoghq.com/account_management/api-app-keys/'},
 							'app_key':{'value':None,'discription':'App key for Datadog Org you whish to explore metrics for. Here is infor on DD app keys: https://docs.datadoghq.com/account_management/api-app-keys/#application-keys'},
-							'file_path':{'value':None,'discription':'File path to custom metric csv file.'}}
+							'file_path':{'value':'USE_API','discription':'File path to custom metric csv file. If left blank, the custom metrics will be pulled from the api'}}
 	# Check to see if user asked for help                    
 	help(run_time_parameters)
 	# Loop through each key in the run_time_parameters to get the command line input for it

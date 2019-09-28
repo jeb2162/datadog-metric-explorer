@@ -1,5 +1,9 @@
 # File contains class for getting datadog monitor and dashboard information for an account.
 from datadog import initialize, api
+import requests
+import datetime
+import json
+import pandas as pd
 
 class datadog_account:
 	def __init__(self, run_time_parameters):
@@ -13,9 +17,6 @@ class datadog_account:
 		
 		self.monitors = self.retrieve_all_monitors()
 		self.dashboards = self.retreive_all_dashbaords()
-		print('DASHBOARDS BELOW ************************\n\n')
-		print(self.dashboards)
-
 
 	# Method for retrieving monitors
 	def retrieve_all_monitors(self):
@@ -35,5 +36,20 @@ class datadog_account:
 			dashboard['dashboard_json'] = dashboard_json
 		# Return the dashboard_listh
 		return dashboard_list
+
+	# Method to get custom metrics usage over the last 90 days
+	def get_custom_metrics_usage(self):
+		# Get the datetime object for 90 days ago
+		today = datetime.date.today()
+		month_string = today.strftime("%Y-%m")
+		datadog_usage_url = ('https://api.datadoghq.com/api/v1/usage/top_avg_metrics?api_key={}&application_key={}&month={}'.format(self.api_key, self.app_key, month_string))
+		# Call datadog via the url to get usage
+		response = requests.get(datadog_usage_url)
+		# Convert response into JSON
+		response_object = json.loads(response.text)
+		custom_metric_pd = pd.DataFrame(response_object['usage'])
+
+		return custom_metric_pd
+
 
 	
